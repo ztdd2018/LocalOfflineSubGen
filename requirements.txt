@@ -1,0 +1,22 @@
+# LocalOfflineSubGen 依赖清单
+# 注：全部依赖仅用于本地计算与本地界面，无任何网络上传组件
+
+# ASR 引擎（默认后端，自带 ctranslate2 / tokenizers / av）
+faster-whisper>=1.1.0
+
+# GUI
+PyQt6>=6.6.0
+
+# 字幕翻译（NLLB-200 本地翻译；ctranslate2 由 faster-whisper 自带）
+sentencepiece>=0.2.0
+
+# ---- 可选依赖（按需安装）----
+# sherpa-onnx 备选后端（FireRedASR2，中文为主场景）
+# sherpa-onnx>=1.12.0
+# sherpa-onnx 后端读取 wav 需要
+# soundfile>=0.12.1
+
+# ---- 打包工具（仅构建机需要）----
+# nuitka>=2.4
+# ordered-set
+# zstandard

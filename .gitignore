@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# 模型与缓存（体积大，首次运行时自动下载）
+cache/
+models/
+bin/
+
+# 本机运行数据（路径与任务列表，随程序自动生成）
+logs/
+config/settings.json
+config/tasks.json
+*.tmp
+
+# 识别产物与临时文件
+*.srt
+*.srt.bak*
+*.vtt
+*.wav
+*.m4a
+!tests/fixtures/*.srt
+
+# IDE / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 构建产物
+build/
+dist/
+*.bin

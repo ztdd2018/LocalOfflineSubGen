@@ -114,6 +114,24 @@ copy /b faster-whisper-large-v3.zip.part1+faster-whisper-large-v3.zip.part2 fast
 
 模型许可：faster-whisper 模型 MIT（基于 OpenAI Whisper）；FireRedASR2 Apache-2.0；NLLB-200 为 CC-BY-NC 4.0（仅限非商业用途）。请在许可范围内使用。
 
+### 第三方组件与许可
+
+本项目代码以 MIT 许可发布（见 [LICENSE](LICENSE)）。以下第三方组件按其自身许可提供：
+
+| 组件 | 许可 | 来源 |
+|---|---|---|
+| FFmpeg / ffprobe（Release 附件与 `fetch_ffmpeg.ps1` 下载） | GPL v3 构建 | [gyan.dev release-essentials](https://www.gyan.dev/ffmpeg/builds/) |
+| PyQt6 | GPL v3 或 Riverbank 商业双许可 | [riverbankcomputing.com](https://www.riverbankcomputing.com/software/pyqt/) |
+| faster-whisper / CTranslate2 | MIT | [github.com/SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) |
+| sherpa-onnx | Apache-2.0 | [github.com/k2-fsa/sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) |
+| sentencepiece | Apache-2.0 | [github.com/google/sentencepiece](https://github.com/google/sentencepiece) |
+| large-v3 / large-v3-turbo 识别模型 | MIT | [Systran/faster-whisper-large-v3](https://huggingface.co/Systran/faster-whisper-large-v3)、[mobiuslabsgmbh/faster-whisper-large-v3-turbo](https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo) |
+| FireRedASR2 模型 | Apache-2.0 | [github.com/FireRedTeam/FireRedASR](https://github.com/FireRedTeam/FireRedASR) |
+| NLLB-200 模型 | CC-BY-NC 4.0（非商业） | [facebook/nllb-200-distilled-600M](https://huggingface.co/facebook/nllb-200-distilled-600M) |
+
+再分发本项目的 Release 附件时，请保留上表来源与许可信息。NLLB-200 权重来自 Meta 的开放科研发布，仅限非商业用途；闭源商业使用 PyQt6 需向 Riverbank 购买商业许可。
+
+
 
 ## 7. 打包（构建机操作）
 

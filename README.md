@@ -87,9 +87,33 @@ cache/models/
 将生成的 `models--Systran--faster-whisper-large-v3` 整个文件夹拷贝到内网机器的
 `cache/models/` 下即可；或在【模型管理】中点"选择本地模型文件夹"直接指向模型目录。
 
-**sherpa-onnx FireRedASR2（可选）**：`pip install sherpa-onnx soundfile`，手动下载
-FireRedASR2 模型文件（encoder.onnx / decoder.onnx / tokens.txt）放到本地目录，
-在【模型管理】中选择该目录，并在任务页将后端切换为 sherpa-onnx。
+**sherpa-onnx FireRedASR2（可选）**：`pip install sherpa-onnx soundfile`，模型文件可从
+Releases 下载 `sherpa-onnx-fire-red-asr2.zip` 解压自动识别，或手动下载放到本地目录后在
+【模型管理】中选择，并在任务页将后端切换为 sherpa-onnx。
+
+### 离线模型包（GitHub Releases 下载）
+
+源码仓库不含模型与 FFmpeg（体积原因）。可在 [Releases](https://github.com/ztdd2018/LocalOfflineSubGen/releases)
+下载对应的 `.zip` 附件，**解压到程序目录根**（`main.py` 所在目录）即可自动生效，无需任何设置：
+
+| 附件 | 内容 | 解压后位置 |
+|---|---|---|
+| `ffmpeg-bin.zip` | FFmpeg / ffprobe | `bin/` |
+| `nllb-200-distilled-600M-int8.zip` | 字幕翻译模型 | `cache/models/nllb-200-distilled-600M-int8/` |
+| `faster-whisper-large-v3.zip` | large-v3 识别模型（默认） | `models/whisper-large-v3/` |
+| `faster-whisper-large-v3-turbo.zip` | large-v3-turbo 识别模型 | `models/whisper-large-v3-turbo/` |
+| `sherpa-onnx-fire-red-asr2.zip` | FireRedASR2 备选后端 | `models/sherpa-onnx-fire-red-asr2-zh_en-int8-2026-02-26/` |
+
+超过 2GB 的附件按 `*.part1 / *.part2` 分卷，合并后再解压：
+
+```bat
+copy /b faster-whisper-large-v3.zip.part1+faster-whisper-large-v3.zip.part2 faster-whisper-large-v3.zip
+```
+
+识别模型（whisper）放入 `models/` 后程序自动探测，优先级：设置中手动指定的本地模型目录 > `models/` 离线模型包 > 在线缓存/自动下载。不联网时首次运行会自动从镜像下载；内网环境直接用上面的离线包。
+
+模型许可：faster-whisper 模型 MIT（基于 OpenAI Whisper）；FireRedASR2 Apache-2.0；NLLB-200 为 CC-BY-NC 4.0（仅限非商业用途）。请在许可范围内使用。
+
 
 ## 7. 打包（构建机操作）
 

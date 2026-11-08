@@ -8,7 +8,7 @@ import os
 import shutil
 from typing import Dict, List
 
-from .config import config
+from .config import app_root, config
 
 # 已知模型注册表
 MODEL_REGISTRY: List[Dict] = [
@@ -49,6 +49,23 @@ MODEL_REGISTRY: List[Dict] = [
 # NLLB 模型：下载到普通目录（便于内网整目录拷贝），非 HF 缓存结构
 NLLB_LOCAL_DIRNAME = "nllb-200-distilled-600M-int8"
 NLLB_REQUIRED_FILES = ("model.bin", "sentencepiece.bpe.model")
+
+
+# Release 离线模型包的解压约定（解压到程序根 models/<名>/ 即自动生效）
+BUNDLED_DIRS = {
+    "large-v3": "whisper-large-v3",
+    "large-v3-turbo": "whisper-large-v3-turbo",
+    "FireRedASR2": "sherpa-onnx-fire-red-asr2-zh_en-int8-2026-02-26",
+}
+
+
+def bundled_model_dir(model_id: str) -> str:
+    """离线模型包目录（GitHub Release 附件解压位置），未放置返回空串"""
+    name = BUNDLED_DIRS.get(model_id)
+    if not name:
+        return ""
+    d = os.path.join(app_root(), "models", name)
+    return d if os.path.isdir(d) else ""
 
 
 def _hf_cache_dirname(repo: str) -> str:

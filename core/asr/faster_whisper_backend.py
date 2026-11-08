@@ -53,6 +53,11 @@ class FasterWhisperBackend(ASRBackend):
         """
         if self.model_local_path and os.path.isfile(os.path.join(self.model_local_path, "model.bin")):
             return self.model_local_path
+        # Release 离线模型包（models/<名>/）自动探测
+        from ..model_manager import bundled_model_dir
+        bundled = bundled_model_dir(self.model_name)
+        if bundled and os.path.isfile(os.path.join(bundled, "model.bin")):
+            return bundled
         return MODEL_NAME_MAP.get(self.model_name, self.model_name)
 
     def load(self, status_cb: Optional[StatusCallback] = None):

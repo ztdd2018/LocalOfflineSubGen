@@ -64,6 +64,10 @@ class SherpaOnnxBackend(ASRBackend):
             )
         directory = self.model_local_path
         if not directory or not os.path.isdir(directory):
+            # Release 离线模型包（models/<名>/）自动探测
+            from ..model_manager import bundled_model_dir
+            directory = bundled_model_dir("FireRedASR2") or directory
+        if not directory or not os.path.isdir(directory):
             raise ASRError(
                 "请先在【模型管理】中选择 FireRedASR2 模型文件夹（需包含 %s）。" % _REQUIRED_HINT
             )

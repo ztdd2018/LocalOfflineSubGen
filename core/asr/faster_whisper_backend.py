@@ -122,6 +122,7 @@ class FasterWhisperBackend(ASRBackend):
             no_speech_threshold=params.no_speech_threshold,
             log_prob_threshold=params.log_prob_threshold,
             compression_ratio_threshold=params.compression_ratio_threshold,
+            initial_prompt=params.initial_prompt or None,
         )
         total = float(getattr(info, "duration", 0.0) or 0.0)
 

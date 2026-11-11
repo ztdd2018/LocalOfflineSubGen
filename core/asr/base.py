@@ -36,6 +36,7 @@ class TranscribeParams:
     vad_threshold: float = 0.5
     beam_size: int = 5
     word_timestamps: bool = False
+    initial_prompt: str = ""        # 语言引导提示（如固定中文时引导模型持续输出中文）
     # 幻听抑制（音乐/喊叫易触发循环重复输出）
     no_speech_threshold: float = 0.6          # 静音概率≥此值且置信度低时跳过该段，调低更激进
     log_prob_threshold: float = -1.0          # 平均置信度低于此值触发温度重试

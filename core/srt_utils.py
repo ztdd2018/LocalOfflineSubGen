@@ -98,6 +98,7 @@ _TOKEN_RE = re.compile(
 )
 _BREAK_PUNCT = "，,、。.！!？?；;：:…）)】」』"
 _ALNUM_RE = re.compile(r"[A-Za-z0-9]")
+_HAN_RE = re.compile(r"[\u4e00-\u9fff]")
 
 DEFAULT_MAX_LINES = 2
 # 视觉宽度：汉字/全角算 2，英文算 1（≈ 每行 20 个汉字或 40 个英文字符）
@@ -230,6 +231,18 @@ def _looks_like_loop(text: str) -> bool:
 def dedupe_repetitions(segments: List[Segment]) -> List[Segment]:
     """剔除整段呈循环重复的幻听字幕（背景音乐/喊叫段常见），其余原样保留"""
     return [s for s in segments if not _looks_like_loop(s.text)]
+
+
+def keep_chinese_only(segments: List[Segment]) -> List[Segment]:
+    """只保留含中文的段：纯英文字幕整段丢弃，中英夹杂句（术语/短词）保留。
+
+    用于中英混合素材「仅识别中文」的需求；纯数字/标点段不受影响。
+    """
+    kept: List[Segment] = []
+    for s in segments:
+        if not _ALNUM_RE.search(s.text) or _HAN_RE.search(s.text):
+            kept.append(s)
+    return kept
 
 
 def split_segments(segments: List[Segment], max_lines: int = DEFAULT_MAX_LINES,

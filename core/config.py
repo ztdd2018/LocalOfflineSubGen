@@ -39,6 +39,7 @@ DEFAULTS = {
     # ---- 音频提取 ----
     "audio_format": "wav",                # wav / m4a
     "denoise": False,                     # ffmpeg afftdn 降噪
+    "vocal_enhance": False,               # 人声增强：RNN 降噪+人声频段滤波（音乐/噪音素材推荐，较慢）
     "auto_clean_temp": True,              # 处理完自动删除临时音频（保密推荐）
     "keep_audio": False,                  # 保留音频文件用于复核
 

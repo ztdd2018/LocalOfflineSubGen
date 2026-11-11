@@ -162,9 +162,16 @@ class _Worker(QThread):
             self._wait_if_paused()
             fmt = config.get("audio_format")
             denoise = config.get("denoise")
+            vocal = bool(config.get("vocal_enhance"))
+            model_path = ""
+            if vocal:
+                from .ffmpeg_utils import ensure_rnnn_model
+                model_path = ensure_rnnn_model(lambda m: self._ctl.log_message.emit(m))
+                denoise = False  # 人声增强已含降噪，避免重复处理
             keep = config.get("keep_audio")
             out_dir = os.path.dirname(media_path) if keep else config.temp_dir()
-            audio_path = extract_audio(media_path, out_dir, fmt, denoise)
+            audio_path = extract_audio(media_path, out_dir, fmt, denoise,
+                                       vocal_enhance=vocal, model_path=model_path)
             if not keep:
                 temp_audio = audio_path
             self._ctl.log_message.emit("音频提取完成：%s" % os.path.basename(audio_path))

@@ -93,12 +93,70 @@ def probe_media(path: str) -> dict:
     return {"duration": duration, "has_audio": has_audio, "size": size}
 
 
-def extract_audio(video_path: str, out_dir: str, fmt: str = "wav", denoise: bool = False) -> str:
+# 人声增强（RNN 降噪）模型注册表：key -> (下载 URL, 文件名)
+# 模型来自 GregorR/rnnoise-models（开源 RNN 降噪模型，供 ffmpeg arnndn 使用）
+RNNOISE_MODELS = {
+    "somnolent": (
+        "https://raw.githubusercontent.com/GregorR/rnnoise-models/master/"
+        "somnolent-hogwash-2018-09-01/sh.rnnn",
+        "somnolent.rnnn",
+    ),
+}
+
+
+def _escape_filter_path(path: str) -> str:
+    """ffmpeg filtergraph 内的路径转义（反斜杠/冒号会破坏参数解析）"""
+    return path.replace("\\", "/").replace(":", r"\:")
+
+
+def rnnn_model_path() -> str:
+    """人声增强模型文件路径；已下载返回路径，否则返回空串"""
+    _, name = RNNOISE_MODELS["somnolent"]
+    p = os.path.join(app_root(), "cache", "denoise", name)
+    return p if os.path.isfile(p) and os.path.getsize(p) > 10240 else ""
+
+
+def ensure_rnnn_model(status_cb=None) -> str:
+    """确保降噪模型就绪，返回模型路径；下载受离线锁管控"""
+    p = rnnn_model_path()
+    if p:
+        return p
+    if config.get("offline_lock"):
+        raise FFmpegError(
+            "人声增强需要首次下载降噪模型（约 220KB），当前已开启离线锁定。"
+            "请临时关闭离线锁定，或手动将 .rnnn 模型放入 cache/denoise/ 目录。"
+        )
+    url, name = RNNOISE_MODELS["somnolent"]
+    dst = os.path.join(app_root(), "cache", "denoise")
+    os.makedirs(dst, exist_ok=True)
+    out = os.path.join(dst, name)
+    tmp = out + ".part"
+    if status_cb:
+        status_cb("正在下载人声增强降噪模型（约 220KB）…")
+    import urllib.request
+    try:
+        with urllib.request.urlopen(url, timeout=60) as resp, open(tmp, "wb") as f:
+            f.write(resp.read())
+    except OSError as e:
+        raise FFmpegError("降噪模型下载失败：%s。可手动下载 %s 放到 %s" % (e, url, dst))
+    os.replace(tmp, out)
+    if os.path.getsize(out) < 10240:
+        os.remove(out)
+        raise FFmpegError("降噪模型下载内容异常，已删除。请检查网络后重试。")
+    return out
+
+
+def extract_audio(video_path: str, out_dir: str, fmt: str = "wav",
+                  denoise: bool = False, vocal_enhance: bool = False,
+                  model_path: str = "") -> str:
     """从视频抽取音频。
 
     - wav：16kHz 单声道 pcm_s16le（ASR 最优输入）
     - m4a：AAC 128k（节省空间）
     - denoise：ffmpeg 本地 afftdn 降噪（纯本地 DSP，无网络）
+    - vocal_enhance：人声增强链（人声频段滤波 + RNN 降噪 + FFT 降噪兜底），
+      优先于 denoise；对背景音乐/环境噪音素材可显著提升识别准确度。
+      RNN 降噪在 CPU 上运行，速度约 0.2x 实时，耗时更长。
     返回输出文件路径。
     """
     ffmpeg = ffmpeg_path()
@@ -107,7 +165,19 @@ def extract_audio(video_path: str, out_dir: str, fmt: str = "wav", denoise: bool
     out_path = os.path.join(out_dir, base + "_extracted." + fmt)
 
     cmd = [ffmpeg, "-y", "-v", "error", "-i", video_path, "-vn"]
-    if denoise:
+    if vocal_enhance:
+        if not model_path:
+            raise FFmpegError("人声增强模型未就绪")
+        chain = (
+            "aformat=sample_rates=48000:channel_layouts=mono,"
+            "highpass=f=70,"
+            "arnndn=m='%s',"
+            "afftdn=nf=-25" % _escape_filter_path(model_path)
+        )
+        if fmt == "wav":
+            chain += ",aresample=16000"
+        cmd += ["-af", chain]
+    elif denoise:
         cmd += ["-af", "afftdn"]
     if fmt == "wav":
         cmd += ["-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le"]

@@ -155,6 +155,9 @@ class TaskPanel(QWidget):
         self.chk_denoise = QCheckBox("ffmpeg afftdn 本地降噪")
         form.addRow("降噪", self.chk_denoise)
 
+        self.chk_vocal = QCheckBox("人声增强：RNN 降噪 + 人声频段滤波，音乐/噪音素材可显著提升准确度（较慢）")
+        form.addRow("", self.chk_vocal)
+
         self.chk_auto_clean = QCheckBox("完成后自动删除临时音频（保密推荐）")
         form.addRow("临时音频清理", self.chk_auto_clean)
 
@@ -217,6 +220,7 @@ class TaskPanel(QWidget):
         self.spin_concurrency.valueChanged.connect(self._save_settings)
         self.cmb_audio_fmt.currentIndexChanged.connect(self._save_settings)
         self.chk_denoise.toggled.connect(self._save_settings)
+        self.chk_vocal.toggled.connect(self._save_settings)
         self.chk_auto_clean.toggled.connect(self._save_settings)
         self.chk_keep_audio.toggled.connect(self._save_settings)
         self.cmb_output_mode.currentIndexChanged.connect(self._save_settings)
@@ -231,7 +235,8 @@ class TaskPanel(QWidget):
         widgets_block = [
             self.cmb_backend, self.cmb_model, self.cmb_language, self.chk_vad,
             self.spin_vad, self.spin_beam, self.cmb_compute, self.spin_concurrency,
-            self.cmb_audio_fmt, self.chk_denoise, self.chk_auto_clean, self.chk_keep_audio,
+            self.cmb_audio_fmt, self.chk_denoise, self.chk_vocal, self.chk_auto_clean,
+            self.chk_keep_audio,
             self.cmb_output_mode, self.edit_output_dir, self.chk_txt, self.chk_json, self.chk_vtt,
         ]
         for w in widgets_block:
@@ -246,6 +251,7 @@ class TaskPanel(QWidget):
         self.spin_concurrency.setValue(config.get("concurrency"))
         self.cmb_audio_fmt.setCurrentIndex(self.cmb_audio_fmt.findData(config.get("audio_format")))
         self.chk_denoise.setChecked(config.get("denoise"))
+        self.chk_vocal.setChecked(config.get("vocal_enhance"))
         self.chk_auto_clean.setChecked(config.get("auto_clean_temp"))
         self.chk_keep_audio.setChecked(config.get("keep_audio"))
         self.cmb_output_mode.setCurrentIndex(self.cmb_output_mode.findData(config.get("output_mode")))
@@ -267,6 +273,7 @@ class TaskPanel(QWidget):
         config.set("concurrency", self.spin_concurrency.value())
         config.set("audio_format", self.cmb_audio_fmt.currentData())
         config.set("denoise", self.chk_denoise.isChecked())
+        config.set("vocal_enhance", self.chk_vocal.isChecked())
         config.set("auto_clean_temp", self.chk_auto_clean.isChecked())
         config.set("keep_audio", self.chk_keep_audio.isChecked())
         config.set("output_mode", self.cmb_output_mode.currentData())

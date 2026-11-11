@@ -30,6 +30,12 @@ DEFAULTS = {
     "compute_type": "auto",               # auto / float16 / int8
     "word_timestamps": False,             # 是否输出词级时间戳 json
 
+    # ---- 幻听抑制（音乐/喊叫段易输出循环重复，如"听懂听懂听懂"、"HAHAHAHA"） ----
+    "no_speech_threshold": 0.6,           # 静音概率≥此值且置信度低时跳过该段；调低（如 0.5）过滤更激进
+    "log_prob_threshold": -1.0,           # 平均置信度低于此值触发温度重试
+    "compression_ratio_threshold": 2.4,   # 文本压缩比超此值判定为循环重复并重试
+    "dedupe_repetition": True,            # 输出层兜底：整段呈循环重复的直接剔除
+
     # ---- 音频提取 ----
     "audio_format": "wav",                # wav / m4a
     "denoise": False,                     # ffmpeg afftdn 降噪

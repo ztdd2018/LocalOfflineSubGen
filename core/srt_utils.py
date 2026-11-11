@@ -197,6 +197,41 @@ def _balanced_two_lines(text: str, max_width: int) -> str:
     return _join_tokens(toks[:i]) + "\n" + _join_tokens(toks[i:])
 
 
+def _looks_like_loop(text: str) -> bool:
+    """检测幻听循环（背景音乐/喊叫段常见），两条规则任一命中即判：
+
+    1. 同一短语连续重复 3 轮以上且几乎占满整段（"听懂听懂听懂听懂"、"哈哈哈哈哈哈"）；
+    2. 2~4 字短语反复出现 ≥4 次且覆盖全段约 1/4 以上，允许中间夹杂少量字
+      （"SO听懂听懂吗听懂听懂了听懂了"、"…ISITOHAHAHAHA…"）。
+
+    正常语句（含"对，对，对，就是这样"等口头重复，短语仅出现 3 次）不受影响。
+    """
+    t = "".join(text.split())
+    n = len(t)
+    if n < 6:
+        return False
+    for size in range(1, 5):
+        if size * 3 > n:
+            break
+        for i in range(n - size * 3 + 1):
+            phrase = t[i:i + size]
+            if phrase * 3 in t and t.count(phrase) * size >= n * 0.7:
+                return True
+        if size < 2:
+            continue
+        for i in range(n - size + 1):
+            phrase = t[i:i + size]
+            cnt = t.count(phrase)
+            if cnt >= 4 and cnt * size >= n * 0.25:
+                return True
+    return False
+
+
+def dedupe_repetitions(segments: List[Segment]) -> List[Segment]:
+    """剔除整段呈循环重复的幻听字幕（背景音乐/喊叫段常见），其余原样保留"""
+    return [s for s in segments if not _looks_like_loop(s.text)]
+
+
 def split_segments(segments: List[Segment], max_lines: int = DEFAULT_MAX_LINES,
                    max_width: int = DEFAULT_MAX_WIDTH) -> List[Segment]:
     """把每段字幕重排为最多 max_lines 行；一行装不下时按字数比例拆成多个连续时段。
@@ -337,18 +372,20 @@ def write_outputs(segments: List[Segment], media_path: str, out_dir: str,
                   export_vtt: bool = False,
                   max_lines: int = DEFAULT_MAX_LINES,
                   max_width: int = DEFAULT_MAX_WIDTH,
-                  split_lang: bool = False) -> List[str]:
+                  split_lang: bool = False,
+                  dedupe: bool = True) -> List[str]:
     """按设置输出字幕产物，返回生成的文件列表。命名：原文件名.srt（与源文件同名）
 
     文本类产物（srt/vtt/txt）统一走排版，保证每段最多 max_lines 行；split_lang=True 时先按语种拆分中英混排段；
-    词级 JSON 保留原始分段，不拆分，避免破坏词时间戳对齐。
+    dedupe=True 时先剔除整段循环重复的幻听字幕；词级 JSON 保留原始分段，不拆分，避免破坏词时间戳对齐。
     """
     os.makedirs(out_dir, exist_ok=True)
     base = _base_output_path(media_path, out_dir)
+    laid_src = dedupe_repetitions(segments) if dedupe else segments
     if split_lang:
-        laid = split_by_lang(segments, max_lines, max_width)
+        laid = split_by_lang(laid_src, max_lines, max_width)
     else:
-        laid = split_segments(segments, max_lines, max_width)
+        laid = split_segments(laid_src, max_lines, max_width)
     jobs = [(write_srt, base + ".srt", laid)]
     if export_vtt:
         jobs.append((write_vtt, base + ".vtt", laid))

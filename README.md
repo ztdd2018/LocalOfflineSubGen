@@ -65,6 +65,19 @@ python main.py
 - 双语输出的每段固定为「原文 1 行 + 译文 1 行」；纯中文段保持单行原文
 - 可在 `config/settings.json` 调整：`subtitle_max_lines`（2 为默认，1 更简洁，0 关闭排版）、`subtitle_max_width`（默认 40）、`subtitle_split_lang`（默认开启语种拆条，false 关闭）
 
+### 幻听抑制（背景音乐/喊叫段的循环重复）
+
+带背景音乐、喊叫、掌声的素材容易触发 Whisper"幻听"——输出如「听懂听懂听懂听懂」「…HAHAHAHA…」的循环重复文本。程序从两层抑制：
+
+- **识别层**（faster-whisper 内置机制，`config/settings.json` 可调）：
+  - `no_speech_threshold`（默认 0.6）：静音概率高且置信度低时跳过该段；素材杂音多可调低到 0.5 更激进过滤
+  - `compression_ratio_threshold`（默认 2.4）：文本压缩比超此值判定为循环并自动重试
+  - `log_prob_threshold`（默认 -1.0）：置信度过低触发温度重试
+- **输出层**：`dedupe_repetition`（默认开启）在写字幕前剔除整段循环重复的字幕条——同一短语连续 3 轮且占满整段，或 2~4 字短语反复出现 ≥4 次且覆盖 1/4 以上；正常语句（含少量口头重复）不受影响
+
+另外建议：这类素材保持 VAD 过滤开启（默认开启）；若中文素材误出英文长串，把任务页"语言"固定为中文（zh）而非自动。
+
+
 ## 6. 模型路径与内网手动部署
 
 模型缓存目录（默认）：`程序目录/cache/models/`

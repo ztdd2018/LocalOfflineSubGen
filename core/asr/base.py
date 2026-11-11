@@ -36,6 +36,10 @@ class TranscribeParams:
     vad_threshold: float = 0.5
     beam_size: int = 5
     word_timestamps: bool = False
+    # 幻听抑制（音乐/喊叫易触发循环重复输出）
+    no_speech_threshold: float = 0.6          # 静音概率≥此值且置信度低时跳过该段，调低更激进
+    log_prob_threshold: float = -1.0          # 平均置信度低于此值触发温度重试
+    compression_ratio_threshold: float = 2.4  # 文本压缩比超过此值判定为循环并重试
 
 
 # 进度回调：(已完成秒数, 总时长秒数)；可在回调内抛 TaskCanceled 中止

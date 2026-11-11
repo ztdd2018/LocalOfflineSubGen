@@ -177,6 +177,9 @@ class _Worker(QThread):
                 vad_threshold=config.get("vad_threshold"),
                 beam_size=config.get("beam_size"),
                 word_timestamps=config.get("word_timestamps") or config.get("export_json"),
+                no_speech_threshold=float(config.get("no_speech_threshold", 0.6)),
+                log_prob_threshold=float(config.get("log_prob_threshold", -1.0)),
+                compression_ratio_threshold=float(config.get("compression_ratio_threshold", 2.4)),
             )
 
             def on_progress(done: float, total: float):
@@ -200,6 +203,7 @@ class _Worker(QThread):
                     max_lines=int(config.get("subtitle_max_lines") or 0),
                     max_width=int(config.get("subtitle_max_width") or 40),
                     split_lang=bool(config.get("subtitle_split_lang")),
+                    dedupe=bool(config.get("dedupe_repetition")),
                 )
             except OSError as e:
                 raise ASRError(

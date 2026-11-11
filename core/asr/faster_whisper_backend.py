@@ -119,6 +119,9 @@ class FasterWhisperBackend(ASRBackend):
             vad_parameters={"threshold": params.vad_threshold} if params.vad_filter else None,
             beam_size=params.beam_size,
             word_timestamps=params.word_timestamps,
+            no_speech_threshold=params.no_speech_threshold,
+            log_prob_threshold=params.log_prob_threshold,
+            compression_ratio_threshold=params.compression_ratio_threshold,
         )
         total = float(getattr(info, "duration", 0.0) or 0.0)
 

@@ -187,6 +187,8 @@ class _Worker(QThread):
                 no_speech_threshold=float(config.get("no_speech_threshold", 0.6)),
                 log_prob_threshold=float(config.get("log_prob_threshold", -1.0)),
                 compression_ratio_threshold=float(config.get("compression_ratio_threshold", 2.4)),
+                # 固定中文时用引导提示，减少模型漂移到英文输出
+                initial_prompt="以下是普通话的句子。" if config.get("language") == "zh" else "",
             )
 
             def on_progress(done: float, total: float):
@@ -198,6 +200,11 @@ class _Worker(QThread):
                     self._ctl.task_progress.emit(task.task_id, task.progress)
 
             segments = self._backend.transcribe(audio_path, params, on_progress)
+
+            # 仅保留中文：纯英文段丢弃（中英夹杂句保留）
+            if config.get("chinese_only"):
+                from .srt_utils import keep_chinese_only
+                segments = keep_chinese_only(segments)
 
             # 3. 输出字幕产物
             self._wait_if_paused()

@@ -123,6 +123,9 @@ class TaskPanel(QWidget):
         self.cmb_language.addItem("英文 en", "en")
         form.addRow("语种模式", self.cmb_language)
 
+        self.chk_chinese_only = QCheckBox("仅保留中文：纯英文段不输出（中英夹杂句保留；建议搭配「中文 zh」）")
+        form.addRow("", self.chk_chinese_only)
+
         self.chk_vad = QCheckBox("开启（减少幻觉空字幕）")
         form.addRow("VAD 静音过滤", self.chk_vad)
 
@@ -213,6 +216,7 @@ class TaskPanel(QWidget):
         self.cmb_backend.currentIndexChanged.connect(self._save_settings)
         self.cmb_model.currentIndexChanged.connect(self._save_settings)
         self.cmb_language.currentIndexChanged.connect(self._save_settings)
+        self.chk_chinese_only.toggled.connect(self._save_settings)
         self.chk_vad.toggled.connect(self._save_settings)
         self.spin_vad.valueChanged.connect(self._save_settings)
         self.spin_beam.valueChanged.connect(self._save_settings)
@@ -233,7 +237,8 @@ class TaskPanel(QWidget):
     def reload_settings(self):
         """从 config 回填界面"""
         widgets_block = [
-            self.cmb_backend, self.cmb_model, self.cmb_language, self.chk_vad,
+            self.cmb_backend, self.cmb_model, self.cmb_language, self.chk_chinese_only,
+            self.chk_vad,
             self.spin_vad, self.spin_beam, self.cmb_compute, self.spin_concurrency,
             self.cmb_audio_fmt, self.chk_denoise, self.chk_vocal, self.chk_auto_clean,
             self.chk_keep_audio,
@@ -244,6 +249,7 @@ class TaskPanel(QWidget):
         self.cmb_backend.setCurrentIndex(self.cmb_backend.findData(config.get("backend")))
         self.cmb_model.setCurrentIndex(self.cmb_model.findData(config.get("model_name")))
         self.cmb_language.setCurrentIndex(self.cmb_language.findData(config.get("language")))
+        self.chk_chinese_only.setChecked(config.get("chinese_only"))
         self.chk_vad.setChecked(config.get("vad_filter"))
         self.spin_vad.setValue(config.get("vad_threshold"))
         self.spin_beam.setValue(config.get("beam_size"))
@@ -266,6 +272,7 @@ class TaskPanel(QWidget):
         config.set("backend", self.cmb_backend.currentData())
         config.set("model_name", self.cmb_model.currentData())
         config.set("language", self.cmb_language.currentData())
+        config.set("chinese_only", self.chk_chinese_only.isChecked())
         config.set("vad_filter", self.chk_vad.isChecked())
         config.set("vad_threshold", self.spin_vad.value())
         config.set("beam_size", self.spin_beam.value())

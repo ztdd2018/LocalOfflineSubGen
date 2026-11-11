@@ -35,6 +35,7 @@ DEFAULTS = {
     "log_prob_threshold": -1.0,           # 平均置信度低于此值触发温度重试
     "compression_ratio_threshold": 2.4,   # 文本压缩比超此值判定为循环重复并重试
     "dedupe_repetition": True,            # 输出层兜底：整段呈循环重复的直接剔除
+    "chinese_only": False,                # 中英混合素材仅保留中文：纯英文段不输出（建议搭配 language=zh）
 
     # ---- 音频提取 ----
     "audio_format": "wav",                # wav / m4a

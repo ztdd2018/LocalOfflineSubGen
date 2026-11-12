@@ -245,11 +245,54 @@ def keep_chinese_only(segments: List[Segment]) -> List[Segment]:
     return kept
 
 
+def _alnum_width(text: str) -> int:
+    """文本中"词"的宽度总和（英文单词/数字串/单个汉字），与词级时间戳的 word 粒度一致。
+    排除空格和标点，保证与 _word_anchored_bounds 的词域宽度同量纲。"""
+    total = 0
+    for m in re.finditer(r"[\u4e00-\u9fff]|[A-Za-z0-9]+(?:['’\-][A-Za-z0-9]+)*", text):
+        total += _visual_width(m.group(0))
+    return total
+
+
+def _word_anchored_bounds(seg: Segment, group_widths: List[int]) -> List[float]:
+    """用词级时间戳定位超长段的拆分点（代替按时间线性加权估算）。
+
+    按各组的视觉宽度占比，在词级累计宽度曲线上找锚点，
+    返回 n+1 个边界时间（首尾为段起止）。无词数据返回空列表。
+    """
+    if not seg.words:
+        return []
+    ws = [w for w in seg.words if w.word.strip()]
+    if len(ws) < 2 or seg.end <= seg.start:
+        return []
+    widths = [max(1, _visual_width(w.word)) for w in ws]
+    bounds = [seg.start]
+    # group_widths 与词级宽度同量纲（都只计词），直接在词宽曲线上推进锚点
+    target = 0.0
+    acc_words = 0.0
+    j = 0
+    for gi in range(len(group_widths) - 1):
+        target += group_widths[gi]
+        while j < len(ws) - 1 and acc_words < target:
+            j += 1
+            acc_words += widths[j]
+        t = float(ws[min(j, len(ws) - 1)].start)
+        if t <= bounds[-1]:
+            t = bounds[-1]
+        bounds.append(t)
+    bounds.append(seg.end)
+    for i in range(1, len(bounds) - 1):
+        if bounds[i] >= bounds[-1]:
+            bounds[i] = bounds[-1]
+    return bounds
+
+
 def split_segments(segments: List[Segment], max_lines: int = DEFAULT_MAX_LINES,
                    max_width: int = DEFAULT_MAX_WIDTH) -> List[Segment]:
-    """把每段字幕重排为最多 max_lines 行；一行装不下时按字数比例拆成多个连续时段。
+    """把每段字幕重排为最多 max_lines 行；一行装不下时拆成多个连续时段。
 
-    时间轴只做切分、不改变总起止时间，切分点按各行视觉宽度加权分配。
+    时间轴只做切分、不改变总起止时间：有词级时间戳时按词边界定位切分点，
+    否则按各行视觉宽度加权分配。
     """
     if max_lines <= 0:
         return list(segments)
@@ -271,9 +314,14 @@ def split_segments(segments: List[Segment], max_lines: int = DEFAULT_MAX_LINES,
         weights = [max(1, sum(_visual_width(ln) for ln in g)) for g in groups]
         total = float(sum(weights))
         duration = seg.end - seg.start
+        # 词边界锚定：每组宽度必须与词级宽度同量纲（只计词，不含空格标点）
+        bounds = _word_anchored_bounds(seg, [max(1, _alnum_width("\n".join(g))) for g in groups])
         cur_start = seg.start
         for idx, (group, weight) in enumerate(zip(groups, weights)):
-            end = seg.end if idx == len(groups) - 1 else cur_start + duration * weight / total
+            if bounds:
+                end = seg.end if idx == len(groups) - 1 else bounds[idx + 1]
+            else:
+                end = seg.end if idx == len(groups) - 1 else cur_start + duration * weight / total
             result.append(Segment(cur_start, end, "\n".join(group),
                                   seg.words if idx == 0 else []))
             cur_start = end
@@ -386,11 +434,13 @@ def write_outputs(segments: List[Segment], media_path: str, out_dir: str,
                   max_lines: int = DEFAULT_MAX_LINES,
                   max_width: int = DEFAULT_MAX_WIDTH,
                   split_lang: bool = False,
-                  dedupe: bool = True) -> List[str]:
+                  dedupe: bool = True,
+                  offset_seconds: float = 0.0) -> List[str]:
     """按设置输出字幕产物，返回生成的文件列表。命名：原文件名.srt（与源文件同名）
 
     文本类产物（srt/vtt/txt）统一走排版，保证每段最多 max_lines 行；split_lang=True 时先按语种拆分中英混排段；
     dedupe=True 时先剔除整段循环重复的幻听字幕；词级 JSON 保留原始分段，不拆分，避免破坏词时间戳对齐。
+    offset_seconds：字幕整体偏移（正=延后显示，负=提前），用于素材级微调；JSON 产物不偏移。
     """
     os.makedirs(out_dir, exist_ok=True)
     base = _base_output_path(media_path, out_dir)
@@ -399,6 +449,10 @@ def write_outputs(segments: List[Segment], media_path: str, out_dir: str,
         laid = split_by_lang(laid_src, max_lines, max_width)
     else:
         laid = split_segments(laid_src, max_lines, max_width)
+    if offset_seconds:
+        laid = [Segment(max(0.0, s.start + offset_seconds),
+                        max(0.0, s.end + offset_seconds), s.text, s.words)
+                for s in laid]
     jobs = [(write_srt, base + ".srt", laid)]
     if export_vtt:
         jobs.append((write_vtt, base + ".vtt", laid))

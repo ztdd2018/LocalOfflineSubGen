@@ -34,3 +34,8 @@ Thumbs.db
 build/
 dist/
 *.bin
+
+# 打包产物
+app/
+build/
+build2/

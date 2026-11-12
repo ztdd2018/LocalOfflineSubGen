@@ -126,6 +126,17 @@ class TaskPanel(QWidget):
         self.chk_chinese_only = QCheckBox("仅保留中文：纯英文段不输出（中英夹杂句保留；建议搭配「中文 zh」）")
         form.addRow("", self.chk_chinese_only)
 
+        self.chk_precise = QCheckBox("精准时间轴：词级对齐，字幕起止对准真实发音（约慢 10%，推荐）")
+        form.addRow("时间轴", self.chk_precise)
+
+        self.spin_offset = QDoubleSpinBox()
+        self.spin_offset.setRange(-10.0, 10.0)
+        self.spin_offset.setSingleStep(0.1)
+        self.spin_offset.setDecimals(1)
+        self.spin_offset.setSuffix(" 秒")
+        self.spin_offset.setToolTip("字幕整体偏移微调：正数延后显示，负数提前。用于个别素材整体偏差校正，识别后修改设置重新导出即可")
+        form.addRow("字幕偏移", self.spin_offset)
+
         self.chk_vad = QCheckBox("开启（减少幻觉空字幕）")
         form.addRow("VAD 静音过滤", self.chk_vad)
 
@@ -217,6 +228,8 @@ class TaskPanel(QWidget):
         self.cmb_model.currentIndexChanged.connect(self._save_settings)
         self.cmb_language.currentIndexChanged.connect(self._save_settings)
         self.chk_chinese_only.toggled.connect(self._save_settings)
+        self.chk_precise.toggled.connect(self._save_settings)
+        self.spin_offset.valueChanged.connect(self._save_settings)
         self.chk_vad.toggled.connect(self._save_settings)
         self.spin_vad.valueChanged.connect(self._save_settings)
         self.spin_beam.valueChanged.connect(self._save_settings)
@@ -238,7 +251,7 @@ class TaskPanel(QWidget):
         """从 config 回填界面"""
         widgets_block = [
             self.cmb_backend, self.cmb_model, self.cmb_language, self.chk_chinese_only,
-            self.chk_vad,
+            self.chk_precise, self.spin_offset, self.chk_vad,
             self.spin_vad, self.spin_beam, self.cmb_compute, self.spin_concurrency,
             self.cmb_audio_fmt, self.chk_denoise, self.chk_vocal, self.chk_auto_clean,
             self.chk_keep_audio,
@@ -250,6 +263,8 @@ class TaskPanel(QWidget):
         self.cmb_model.setCurrentIndex(self.cmb_model.findData(config.get("model_name")))
         self.cmb_language.setCurrentIndex(self.cmb_language.findData(config.get("language")))
         self.chk_chinese_only.setChecked(config.get("chinese_only"))
+        self.chk_precise.setChecked(config.get("precise_timestamps"))
+        self.spin_offset.setValue(float(config.get("subtitle_offset_seconds") or 0.0))
         self.chk_vad.setChecked(config.get("vad_filter"))
         self.spin_vad.setValue(config.get("vad_threshold"))
         self.spin_beam.setValue(config.get("beam_size"))
@@ -273,6 +288,8 @@ class TaskPanel(QWidget):
         config.set("model_name", self.cmb_model.currentData())
         config.set("language", self.cmb_language.currentData())
         config.set("chinese_only", self.chk_chinese_only.isChecked())
+        config.set("precise_timestamps", self.chk_precise.isChecked())
+        config.set("subtitle_offset_seconds", self.spin_offset.value())
         config.set("vad_filter", self.chk_vad.isChecked())
         config.set("vad_threshold", self.spin_vad.value())
         config.set("beam_size", self.spin_beam.value())

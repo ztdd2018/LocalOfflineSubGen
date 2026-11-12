@@ -36,6 +36,8 @@ DEFAULTS = {
     "compression_ratio_threshold": 2.4,   # 文本压缩比超此值判定为循环重复并重试
     "dedupe_repetition": True,            # 输出层兜底：整段呈循环重复的直接剔除
     "chinese_only": False,                # 中英混合素材仅保留中文：纯英文段不输出（建议搭配 language=zh）
+    "precise_timestamps": False,          # 精准时间轴：词级对齐，字幕起止对准真实发音（约慢 10%）
+    "subtitle_offset_seconds": 0.0,       # 字幕整体偏移（秒）：正=延后显示，负=提前，素材级微调
 
     # ---- 音频提取 ----
     "audio_format": "wav",                # wav / m4a

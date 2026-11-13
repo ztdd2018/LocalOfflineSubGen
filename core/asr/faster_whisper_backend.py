@@ -18,6 +18,31 @@ MODEL_NAME_MAP = {
     "large-v3-turbo": "turbo",
 }
 
+# GUI 展示名 -> HF 仓库（用于直接定位本地缓存快照，绕过 huggingface_hub 的联网判定）
+_HF_REPO_MAP = {
+    "large-v3": "Systran/faster-whisper-large-v3",
+    "large-v3-turbo": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+}
+
+
+def _hf_snapshot_dir(model_name: str, cache_dir: str) -> str:
+    """在 HF 缓存目录里直接找已下载的模型快照（含 model.bin 的目录）。
+
+    命中后把快照目录直接交给 faster-whisper，完全不经过 huggingface_hub 的
+    离线/联网判定——离线锁定下加载稳定，且避免每次联网核对版本。
+    """
+    repo = _HF_REPO_MAP.get(model_name)
+    if not repo or not cache_dir:
+        return ""
+    snaps = os.path.join(cache_dir, "models--" + repo.replace("/", "--"), "snapshots")
+    if not os.path.isdir(snaps):
+        return ""
+    for entry in sorted(os.listdir(snaps)):
+        snap = os.path.join(snaps, entry)
+        if os.path.isfile(os.path.join(snap, "model.bin")):
+            return snap
+    return ""
+
 
 class FasterWhisperBackend(ASRBackend):
     name = "faster-whisper"
@@ -58,6 +83,10 @@ class FasterWhisperBackend(ASRBackend):
         bundled = bundled_model_dir(self.model_name)
         if bundled and os.path.isfile(os.path.join(bundled, "model.bin")):
             return bundled
+        # 本地 HF 缓存快照直接命中（离线锁定下也能稳定加载，不再依赖联网判定）
+        snap = _hf_snapshot_dir(self.model_name, self.cache_dir)
+        if snap:
+            return snap
         return MODEL_NAME_MAP.get(self.model_name, self.model_name)
 
     def load(self, status_cb: Optional[StatusCallback] = None):

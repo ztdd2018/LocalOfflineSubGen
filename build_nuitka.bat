@@ -15,7 +15,10 @@ python -m nuitka ^
   --enable-plugin=pyqt6 ^
   --include-data-dir=bin=bin ^
   --include-package=faster_whisper ^
+  --include-package-data=faster_whisper ^
   --include-package=ctranslate2 ^
+  --include-package=sherpa_onnx ^
+  --include-package=sentencepiece ^
   --include-package=tokenizers ^
   --include-package=av ^
   --include-package=huggingface_hub ^
@@ -36,5 +39,15 @@ if errorlevel 1 (
 
 REM 整理绿色包目录名
 if exist dist\main.dist ren dist\main.dist LocalOfflineSubGen
+
+REM GPU 依赖：ctranslate2 需要 cublas（pip 包 ctranslate2 不自带），从 nvidia-cublas-cu12 复制到产物目录
+set CUBLAS_DIR=
+for /f "delims=" %%P in ('python -c "import nvidia, os; print(os.path.join(os.path.dirname(nvidia.__file__), 'cublas', 'bin'))"') do set CUBLAS_DIR=%%P
+if defined CUBLAS_DIR (
+  for %%D in (cublas64_12.dll cublasLt64_12.dll nvblas64_12.dll) do (
+    if exist "%CUBLAS_DIR%\%%D" copy /y "%CUBLAS_DIR%\%%D" "dist\LocalOfflineSubGen\" >nul
+  )
+)
+
 echo [完成] 绿色版已输出到 dist\LocalOfflineSubGen\ ，可直接整体拷贝分发
 endlocal

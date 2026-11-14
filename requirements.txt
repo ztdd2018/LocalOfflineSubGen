@@ -1,4 +1,4 @@
-# LocalOfflineSubGen 依赖清单
+﻿# LocalOfflineSubGen 依赖清单
 # 注：全部依赖仅用于本地计算与本地界面，无任何网络上传组件
 
 # ASR 引擎（默认后端，自带 ctranslate2 / tokenizers / av）
@@ -20,3 +20,4 @@ sentencepiece>=0.2.0
 # nuitka>=2.4
 # ordered-set
 # zstandard
+nvidia-cublas-cu12  # GPU 运行库（ctranslate2 依赖，Windows 下需手动复制 DLL 或随打包分发）

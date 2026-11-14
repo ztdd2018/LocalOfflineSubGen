@@ -110,10 +110,19 @@ def _escape_filter_path(path: str) -> str:
 
 
 def rnnn_model_path() -> str:
-    """人声增强模型文件路径；已下载返回路径，否则返回空串"""
+    """人声增强模型文件路径；已就绪返回路径，否则返回空串。
+
+    查找顺序：缓存目录 cache/denoise/ → 随程序分发的 models/denoise/。
+    注意必须走 config.cache_dir()（与 ASR/翻译模型同一缓存基点），
+    打包版 app_root() 下的 cache 仅为兜底，历史上曾因基点不一致导致
+    模型明明在缓存里却提示需联网下载。
+    """
     _, name = RNNOISE_MODELS["somnolent"]
-    p = os.path.join(app_root(), "cache", "denoise", name)
-    return p if os.path.isfile(p) and os.path.getsize(p) > 10240 else ""
+    for base in (config.cache_dir(), os.path.join(app_root(), "models", "denoise")):
+        p = os.path.join(base, name)
+        if os.path.isfile(p) and os.path.getsize(p) > 10240:
+            return p
+    return ""
 
 
 def ensure_rnnn_model(status_cb=None) -> str:
@@ -123,11 +132,11 @@ def ensure_rnnn_model(status_cb=None) -> str:
         return p
     if config.get("offline_lock"):
         raise FFmpegError(
-            "人声增强需要首次下载降噪模型（约 220KB），当前已开启离线锁定。"
+            "人声增强需要首次下载降噪模型（约 300KB），当前已开启离线锁定。"
             "请临时关闭离线锁定，或手动将 .rnnn 模型放入 cache/denoise/ 目录。"
         )
     url, name = RNNOISE_MODELS["somnolent"]
-    dst = os.path.join(app_root(), "cache", "denoise")
+    dst = os.path.join(config.cache_dir(), "denoise")
     os.makedirs(dst, exist_ok=True)
     out = os.path.join(dst, name)
     tmp = out + ".part"

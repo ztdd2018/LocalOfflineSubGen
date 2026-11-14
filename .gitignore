@@ -7,11 +7,10 @@ venv/
 
 # 模型与缓存（体积大，首次运行时自动下载）
 cache/
-models/
+models/*
 bin/
 # 降噪模型很小（约 300KB），随仓库分发实现零下载
 !models/denoise/
-!models/denoise/*
 
 # 本机运行数据（路径与任务列表，随程序自动生成）
 logs/

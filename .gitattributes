@@ -1,0 +1,8 @@
+# 二进制文件禁止换行转换
+*.rnnn binary
+*.bin binary
+*.onnx binary
+*.wav binary
+*.mp4 binary
+*.ico binary
+*.png binary
